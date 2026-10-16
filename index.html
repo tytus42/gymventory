@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <script src="config.js"></script>
-<script>window.GV_VERSION='2.0'</script>
+<script>window.GV_VERSION='2.0.1'</script>
 <style>
 /* Layout: one-column gym log, steel-chalk ground, cobalt like a 20 kg plate; condensed numerals read like a gym scoreboard. Bottom tab bar, sheets slide over for logging. */
 :root{
@@ -205,7 +205,7 @@ table.t td.n{font-family:var(--f-display);font-size:18px;font-weight:600;text-al
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:60;font-size:14px;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
 .loading{padding:60px 0;text-align:center;color:var(--muted)}
-@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+@media (prefers-reduced-motion:no-preference){.sheet.anim{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
 
 /* Gymventory additions */
 .seg{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin-bottom:14px}
@@ -489,7 +489,13 @@ function boot(){
   render();
   if(CFG&&AUTH){push().then(()=>pull()).then(()=>socLoad())}
 }
-if('serviceWorker' in navigator&&location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+if('serviceWorker' in navigator&&location.protocol!=='file:'){
+  const hadSW=!!navigator.serviceWorker.controller;let pendingReload=false;
+  const tryReload=()=>{if(!ui.sheet&&!IV&&!ui.view){flushAll();location.reload()}else pendingReload=true};
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadSW)tryReload()});
+  document.addEventListener('visibilitychange',()=>{if(pendingReload&&document.visibilityState==='visible'&&!ui.sheet&&!IV)location.reload()});
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
 
 /* ---------- domain ---------- */
 const ex=id=>S.profile.exercises.find(e=>e.id===id);
@@ -599,12 +605,14 @@ const IC={
 
 /* ---------- render ---------- */
 function render(){
+  const sy=window.scrollY;
   const a=document.activeElement;const fid=a?.id;let sel=null;try{sel=[a.selectionStart,a.selectionEnd]}catch(e){}
   if(!S.profile){return}
   $('#tabs').innerHTML=`<nav aria-label="Sekcje">${[['day','Trening'],['hist','Historia'],['prog','Postępy'],['team','Ekipa'],['more','Więcej']].map(([k,l])=>`<button data-act="tab" data-v="${k}" class="${ui.tab===k?'on':''}" aria-current="${ui.tab===k}">${IC[k]}${l}</button>`).join('')}</nav>`;
   const v=({day:vDay,hist:vHist,prog:vProgTab,team:vTeam,more:vMore}[ui.tab]||vDay)();
   $('#app').innerHTML=`<div class="topbar"><div class="brand"><i></i>Gymventory</div>${syncHtml()}</div>${v}`;
   renderSheet();renderViewer();hydratePhotos();
+  if(Math.abs(window.scrollY-sy)>1)window.scrollTo(0,sy);
   if(fid){const el=document.getElementById(fid);if(el&&el!==document.activeElement){el.focus({preventScroll:true});try{if(sel&&sel[0]!=null)el.setSelectionRange(sel[0],sel[1])}catch(e){}}}
 }
 
@@ -831,10 +839,12 @@ function plateOut(){
 /* ---------- sheets ---------- */
 function renderSheet(){
   const el=$('#sheet');const s=ui.sheet;
-  if(!s){if(el.innerHTML)el.innerHTML='';return}
+  if(!s){if(el.innerHTML)el.innerHTML='';renderSheet.last=null;return}
   let h='';
   h=({pick:sPick,log:sLog,routinePick:sRoutinePick,saveRoutine:sSaveRoutine,exInfo:sExInfo,friend:sFriend,challenge:sChallenge}[s.type]||(()=>''))();
-  el.innerHTML=`<div class="sheet-wrap" data-act="closeBg"><div class="sheet" role="dialog" aria-modal="true">${h}</div></div>`;
+  const old=el.querySelector('.sheet');const same=old&&renderSheet.last===s;const top=same?old.scrollTop:0;
+  el.innerHTML=`<div class="sheet-wrap" data-act="closeBg"><div class="sheet${same?'':' anim'}" role="dialog" aria-modal="true">${h}</div></div>`;
+  if(same)el.querySelector('.sheet').scrollTop=top;renderSheet.last=s;
 }
 function sPick(){
   const s=ui.sheet;const q=(s.q||'').toLowerCase();const I=index();
