@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <script src="config.js"></script>
-<script>window.GV_VERSION='2.0.1'</script>
+<script>window.GV_VERSION='2.1'</script>
 <style>
 /* Layout: one-column gym log, steel-chalk ground, cobalt like a 20 kg plate; condensed numerals read like a gym scoreboard. Bottom tab bar, sheets slide over for logging. */
 :root{
@@ -260,6 +260,13 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:
 .cardio-calc{font-size:13px;color:var(--muted);margin-top:8px}
 .cardio-calc b{color:var(--fg);font-weight:600}
 input[type=email],input[type=password]{min-height:42px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);width:100%;min-width:0}
+
+.comp{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.comp .stat .v{font-size:24px}
+.scale-live{font-family:var(--f-display);font-size:56px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;text-align:center;padding:6px 0}
+.scale-live small{font-size:22px;color:var(--muted)}
+details.diag summary{cursor:pointer;font-size:13px;color:var(--muted);padding:6px 0}
+details.diag pre{font-size:11px;line-height:1.4;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px;max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin:6px 0}
 @media (max-width:420px){h1{font-size:34px}.stepper{grid-template-columns:44px 1fr 44px}.stepper input{font-size:28px;padding:0 2px}.vol{grid-template-columns:70px 1fr 36px}}
 </style>
 </head>
@@ -306,6 +313,7 @@ function defaultProfile(){
   return {v:2,exercises:ex,routines:[],settings:clone(DEF_SETTINGS),body:[]};
 }
 function migrate(p){p=clone(p);p.exercises??=[];p.routines??=[];p.body??=[];p.settings={...clone(DEF_SETTINGS),...(p.settings||{})};
+  p.body.forEach(b=>{b.id??=b.d+(b.t?'-'+b.t:'')});p.me??={};
   p.exercises.forEach(e=>{if(e.type==='time'&&/bieżni|biezni|bieg|rower|orbitrek|wioślarz|ergometr/i.test(e.name))e.type='cardio'});return p}
 const TYPES=[['w','Ciężar × powtórzenia'],['bw','Masa ciała (powtórzenia)'],['time','Czas (np. plank)'],['cardio','Cardio: czas, dystans, prędkość']];
 const typeOpts=sel=>TYPES.map(([k,l])=>`<option value="${k}" ${k===sel?'selected':''}>${l}</option>`).join('');
@@ -560,7 +568,8 @@ function prefill(id,d){
 }
 // ACSM metabolic equations (walking below 7.5 km/h, running above)
 function autoMet(v,inc){if(!v)return 0;const m=v*1000/60,g=(inc||0)/100;const vo2=v<7.5?0.1*m+1.8*m*g+3.5:0.2*m+0.9*m*g+3.5;return vo2/3.5}
-const bodyKg=()=>{const b=S.profile.body.slice().sort((a,c)=>a.d.localeCompare(c.d));return b.length?b[b.length-1].w:75};
+const bodySorted=()=>S.profile.body.slice().sort((a,c)=>a.d.localeCompare(c.d)||(a.t||0)-(c.t||0));
+const bodyKg=()=>{const b=bodySorted();return b.length?b[b.length-1].w:75};
 const setKcal=x=>{const met=x.met||autoMet(x.v,x.inc);return met&&x.r?met*bodyKg()*x.r/3600:0};
 function durTxt(w){const ms=(w.end||Date.now())-w.start;const m=Math.max(0,Math.floor(ms/60000));return m>=60?`${Math.floor(m/60)}:${pad(m%60)}`:`${m}<small style="font-size:13px"> min</small>`}
 setInterval(()=>{const el=document.getElementById('dur');const w=S.workouts?.[ui.date];if(el&&w?.start&&!w.end)el.innerHTML=durTxt(w)},20000);
@@ -581,7 +590,7 @@ function lineChart(pts,unit=''){
   let y0=Math.min(...pts.map(p=>p.y)),y1=Math.max(...pts.map(p=>p.y));const padY=(y1-y0)*0.12||Math.max(1,y1*0.05);y0-=padY;y1+=padY;
   const st=niceStep((y1-y0)/4);y0=Math.floor(y0/st)*st;y1=Math.ceil(y1/st)*st;
   const sx=t=>L+(t-x0)/(x1-x0)*(W0-L-R),sy=v=>T+(1-(v-y0)/(y1-y0))*(H0-T-B);
-  let g='';for(let v=y0;v<=y1+1e-9;v+=st){const y=sy(v).toFixed(1);g+=`<line x1="${L}" x2="${W0-R}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${+y+4}" text-anchor="end">${fmt(v,1)}</text>`}
+  let g='';for(let v=y0;v<=y1+1e-9;v+=st){const y=sy(v).toFixed(1);g+=`<line x1="${L}" x2="${W0-R}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${+y+4}" text-anchor="end">${fmt(v,st<0.1?2:st<1?1:0)}</text>`}
   const P=pts.map((p,i)=>[sx(xs[i]),sy(p.y)]);
   const line=P.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
   const area=line+` L${P[P.length-1][0].toFixed(1)} ${H0-B} L${P[0][0].toFixed(1)} ${H0-B} Z`;
@@ -753,19 +762,131 @@ function vExDetail(id){
   return h;
 }
 
+/* ---------- body composition (Xiaomi algorithm, as reimplemented by openScale / bodymiscale) ---------- */
+function ageAt(birth,d){const b=pIso(birth),x=pIso(d);let a=x.getFullYear()-b.getFullYear();if(x.getMonth()<b.getMonth()||(x.getMonth()===b.getMonth()&&x.getDate()<b.getDate()))a--;return a}
+function bodyComp(e){
+  const me=S.profile.me||{};if(!e?.imp||!me.height||!me.sex||!me.birth)return null;
+  const male=me.sex==='m',h=+me.height,w=e.w,imp=e.imp,age=Math.max(10,ageAt(me.birth,e.d));
+  const lbmC=(h*9.058/100)*(h/100)+w*0.32+12.226-imp*0.0068-age*0.0542;
+  let lbmSub=0.8;if(!male)lbmSub=age<=49?9.25:7.25;
+  let k=1;if(male&&w<61)k=0.98;else if(!male&&w>60){k=0.96;if(h>160)k*=1.03}else if(!male&&w<50){k=1.02;if(h>160)k*=1.03}
+  let fat=(1-((lbmC-lbmSub)*k)/w)*100;if(fat>63)fat=75;fat=Math.min(75,Math.max(5,fat));
+  let bone=-((male?0.18016894:0.245691014)-lbmC*0.05158);bone+=bone>2.2?0.1:-0.1;if((!male&&bone>5.1)||(male&&bone>5.2))bone=8;bone=Math.max(0.5,bone);
+  let water=(100-fat)*0.7;water*=water<50?1.02:0.98;water=Math.min(80,Math.max(35,water));
+  const fatKg=w*fat/100;const muscle=Math.max(10,w-fatKg-bone);
+  let visc;if(!male){if(w>(13-h*0.5)*-1){const ss=(h*1.45+h*0.1158*h)-120;visc=w*500/ss-6+age*0.07}else{const sc=0.691+h*-0.0024+h*-0.0024;visc=-((h*0.027)-(sc*w))+age*0.07-age}}
+  else{if(h<w*1.6){const sc=-((h*0.4)-(h*(h*0.0826)));visc=(w*305)/(sc+48)-2.9+age*0.15}else{const sc=0.765+h*-0.0015;visc=-((h*0.143)-(w*sc))+age*0.15-5}}
+  visc=Math.min(50,Math.max(1,visc));
+  let bmr=male?877.8+w*14.916-h*0.726-age*8.976:864.6+w*10.2036-h*0.39336-age*6.204;bmr=Math.min(3000,Math.max(500,bmr));
+  let protein=muscle/w*100-water;protein=Math.min(32,Math.max(5,protein));
+  let mage=male?h*-0.7471+w*0.9161+age*0.4184+imp*0.0517+54.2267:h*-1.1165+w*1.5784+age*0.4615+imp*0.0415+83.2548;mage=Math.min(80,Math.max(15,mage));
+  return {bmi:w/((h/100)**2),fat,fatKg,lean:w-fatKg,muscle,water,bone,visc,bmr,protein,mage,age};
+}
+const BMETRICS=[['w','Masa','kg',1],['fat','Tkanka tłuszczowa','%',1],['muscle','Mięśnie','kg',1],['water','Woda','%',1],['visc','Tłuszcz trzewny','',0]];
+function bmiTag(v){return v<18.5?['warn','niedowaga']:v<25?['good','norma']:v<30?['warn','nadwaga']:['warn','otyłość']}
 function vBody(){
-  const B=S.profile.body.slice().sort((a,b)=>a.d.localeCompare(b.d));const last=B[B.length-1];
-  const avg=(from)=>{const x=B.filter(b=>b.d>=from);return x.length?x.reduce((t,b)=>t+b.w,0)/x.length:null};
-  const a7=avg(addDays(today(),-6)),a7p=(()=>{const x=B.filter(b=>b.d>=addDays(today(),-13)&&b.d<addDays(today(),-6));return x.length?x.reduce((t,b)=>t+b.w,0)/x.length:null})();
-  let h=`<div class="panel"><div class="grid3" style="align-items:end"><label class="f">Data<input type="date" id="bodyD" data-in="bodyD" value="${ui.bodyD}"></label><label class="f">Masa ciała (kg)<input type="number" id="bodyW" data-in="bodyW" inputmode="decimal" step="0.1" value="${esc(ui.bodyW)}" placeholder="${last?fmt(last.w,1):'np. 80,5'}"></label><button class="btn primary" data-act="bodyAdd">Zapisz</button></div></div>`;
+  const B=bodySorted();const last=B[B.length-1];const me=S.profile.me||{};
+  const avg=(from,to)=>{const x=B.filter(b=>b.d>=from&&(!to||b.d<to));return x.length?x.reduce((t,b)=>t+b.w,0)/x.length:null};
+  const a7=avg(addDays(today(),-6)),a7p=avg(addDays(today(),-13),addDays(today(),-6));
+  const lastC=[...B].reverse().find(b=>b.imp);const comp=lastC?bodyComp(lastC):null;const meOk=me.height&&me.sex&&me.birth;
+  let h=`<div class="panel stack"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><div style="flex:1;min-width:0"><h3>Waga Xiaomi</h3><div class="small muted" id="scaleSt">${esc(SC.status||(navigator.bluetooth?'Stań na wadze, żeby się wybudziła, i od razu kliknij „Połącz”.':'Ta przeglądarka nie obsługuje Bluetooth. Otwórz aplikację w Chrome na Androidzie albo na komputerze.'))}</div></div>
+    ${navigator.bluetooth?`<button class="btn primary" data-act="scaleConnect" ${SC.busy?'disabled':''}>${SC.busy?'Łączę…':'Połącz z wagą'}</button>`:''}</div>
+    <div class="scale-live" id="scaleLive" ${SC.live?'':'hidden'}>${fmt(SC.live,2)}<small> kg</small></div>
+    ${SC.pending.map((m,i)=>`<div class="prev"><b>${fmt(m.w,2)} kg</b> · ${new Date(m.t).toLocaleString('pl-PL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} — pomiar wyraźnie różni się od Twojej masy. To Ty?<div class="row" style="margin-top:6px"><button class="btn" data-act="scaleYes" data-v="${i}">Tak, zapisz</button><button class="btn ghost" data-act="scaleNo" data-v="${i}">Nie, pomiń</button></div></div>`).join('')}
+    ${!meOk?`<p class="small" style="margin:0"><span class="tag warn">uzupełnij</span> Podaj płeć, wzrost i datę urodzenia poniżej — bez tego nie policzę tkanki tłuszczowej, mięśni i reszty.</p>`:''}</div>`;
+  if(comp){
+    const [bt,bl]=bmiTag(comp.bmi);const vt=comp.visc<10?['good','norma']:comp.visc<15?['warn','podwyższony']:['warn','wysoki'];
+    const tiles=[['Masa ciała',fmt(lastC.w,2),'kg',''],['BMI',fmt(comp.bmi,1),'',`<span class="tag ${bt}">${bl}</span>`],['Tkanka tłuszczowa',fmt(comp.fat,1),'%',`${fmt(comp.fatKg,1)} kg`],['Mięśnie',fmt(comp.muscle,1),'kg',''],['Woda',fmt(comp.water,1),'%',''],['Masa kostna',fmt(comp.bone,2),'kg',''],['Tłuszcz trzewny',fmt(comp.visc,0),'',`<span class="tag ${vt[0]}">${vt[1]}</span>`],['Białko',fmt(comp.protein,1),'%',''],['Przemiana materii (BMR)',fmt(comp.bmr,0),'kcal',''],['Wiek metaboliczny',fmt(comp.mage,0),'lat',`metrykalnie ${comp.age}`],['Masa beztłuszczowa',fmt(comp.lean,1),'kg',''],['Impedancja',lastC.imp,'Ω','']];
+    h+=`<div class="group-h">Skład ciała · ${dLong(lastC.d)}${lastC.t?' '+new Date(lastC.t).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'}):''}</div><div class="comp">${tiles.map(([k,v,u,x])=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}${u?`<small> ${u}</small>`:''}</div>${x?`<div class="k">${x}</div>`:''}</div>`).join('')}</div>
+    <p class="small muted">Wartości poza masą i impedancją są szacunkiem ze wzorów (tak jak w Zepp Life) i mogą się od niego różnić o ułamki procenta. Najlepiej porównywać pomiary robione o tej samej porze, np. rano po przebudzeniu.</p>`;
+  }
+  h+=`<div class="group-h">Twoje dane do obliczeń</div><div class="panel"><div class="grid3" style="align-items:end"><label class="f">Płeć<select id="meSex"><option value="">—</option><option value="m" ${me.sex==='m'?'selected':''}>mężczyzna</option><option value="f" ${me.sex==='f'?'selected':''}>kobieta</option></select></label>
+    <label class="f">Wzrost (cm)<input type="number" id="meH" inputmode="numeric" min="100" max="230" value="${me.height||''}"></label><label class="f">Data urodzenia<input type="date" id="meB" value="${me.birth||''}"></label></div>
+    <button class="btn" data-act="meSave" style="margin-top:10px">Zapisz dane</button></div>
+  <div class="group-h">Dodaj pomiar ręcznie</div><div class="panel"><div class="grid3" style="align-items:end"><label class="f">Data<input type="date" id="bodyD" data-in="bodyD" value="${ui.bodyD}"></label><label class="f">Masa ciała (kg)<input type="number" id="bodyW" data-in="bodyW" inputmode="decimal" step="0.1" value="${esc(ui.bodyW)}" placeholder="${last?fmt(last.w,1):'np. 80,5'}"></label><button class="btn primary" data-act="bodyAdd">Zapisz</button></div></div>`;
   if(B.length){
-    h+=`<div class="stats" style="margin-top:12px"><div class="stat"><div class="k">Ostatni pomiar</div><div class="v">${fmt(last.w,1)}<small> kg</small></div><div class="k">${dShort(last.d)}</div></div>
-    <div class="stat"><div class="k">Średnia 7 dni</div><div class="v">${a7?fmt(a7,1):'–'}<small> kg</small></div><div class="k">${a7&&a7p?`${a7-a7p>=0?'+':''}${fmt(a7-a7p,1)} kg tydz. do tyg.`:'za mało danych'}</div></div>
+    const mk=ui.bodyMetric||'w';const M=BMETRICS.find(x=>x[0]===mk);
+    const pts=B.slice(-180).map(b=>{if(mk==='w')return{x:b.d,y:b.w};const c=bodyComp(b);return c?{x:b.d,y:c[mk]}:null}).filter(Boolean);
+    const byDay={};pts.forEach(p=>byDay[p.x]=p);const ptsD=Object.values(byDay);
+    h+=`<div class="stats" style="margin-top:12px"><div class="stat"><div class="k">Średnia 7 dni</div><div class="v">${a7?fmt(a7,1):'–'}<small> kg</small></div><div class="k">${a7&&a7p?`${a7-a7p>=0?'+':''}${fmt(a7-a7p,1)} kg tydz. do tyg.`:'za mało danych'}</div></div>
     <div class="stat"><div class="k">Zmiana od startu</div><div class="v">${B.length>1?(last.w-B[0].w>=0?'+':'')+fmt(last.w-B[0].w,1):'–'}<small> kg</small></div><div class="k">od ${dShort(B[0].d)}</div></div></div>
-    <div class="panel" style="margin-top:10px"><h3>Masa ciała</h3>${lineChart(B.slice(-120).map(b=>({x:b.d,y:b.w})))}</div>
-    <div class="group-h">Pomiary</div><div class="list">${B.slice().reverse().slice(0,30).map(b=>`<div class="li"><div class="mid"><div>${dLong(b.d)}</div></div><div class="r">${fmt(b.w,1)} kg</div><button class="btn ghost danger ${ui.armed==='b'+b.d?'armed':''}" data-act="bodyDel" data-v="${b.d}" aria-label="Usuń pomiar">${ui.armed==='b'+b.d?'Usuń?':'×'}</button></div>`).join('')}</div>`;
-  }else h+=`<div class="empty" style="margin-top:12px">Zapisz pierwszy pomiar, a pojawi się wykres i średnia tygodniowa, która wygładza wahania wody.</div>`;
+    <div class="panel" style="margin-top:10px"><div class="chips" style="margin-bottom:8px">${BMETRICS.map(([k,l])=>`<button class="chip ${k===mk?'on':''}" data-act="bodyMetric" data-v="${k}">${l}</button>`).join('')}</div>${ptsD.length?lineChart(ptsD):'<p class="muted small">Ten wykres pojawi się po pomiarach z wagi i uzupełnieniu danych do obliczeń.</p>'}</div>
+    <div class="group-h">Pomiary</div><div class="list">${B.slice().reverse().slice(0,40).map(b=>{const c=bodyComp(b);const id=b.id||b.d;return `<div class="li"><div class="mid"><div>${dLong(b.d)}${b.t?' · '+new Date(b.t).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'}):''}</div><div class="muted small">${b.src==='scale'?'waga Xiaomi':'ręcznie'}${c?` · tłuszcz ${fmt(c.fat,1)}% · mięśnie ${fmt(c.muscle,1)} kg`:''}</div></div><div class="r">${fmt(b.w,2)} kg</div><button class="btn ghost danger ${ui.armed==='b'+id?'armed':''}" data-act="bodyDel" data-v="${esc(id)}" aria-label="Usuń pomiar">${ui.armed==='b'+id?'Usuń?':'×'}</button></div>`}).join('')}</div>`;
+  }else h+=`<div class="empty" style="margin-top:12px">Połącz się z wagą albo dodaj pierwszy pomiar ręcznie, a pojawi się wykres i średnia tygodniowa.</div>`;
+  if(navigator.bluetooth)h+=`<details class="diag" style="margin-top:14px" ${SC.log.length&&!SC.got&&!SC.busy?'open':''}><summary>Dziennik połączenia z wagą (do zgłaszania problemów)</summary><pre id="scaleLog">${esc(SC.log.join('\n')||'Pusto — połącz się z wagą.')}</pre><div class="row"><button class="btn" data-act="scaleLogCopy">Kopiuj dziennik</button><button class="btn ghost" data-act="scaleAll">Szukaj wśród wszystkich urządzeń</button></div></details>`;
   return h;
+}
+
+/* ---------- Xiaomi Mi Body Composition Scale 2 (MIBFS) over Web Bluetooth ---------- */
+const SC={busy:false,status:'',live:0,log:[],pending:[],got:0,dev:null,hc:null,done:false};
+const MI={bc:0x181b,hist:'00002a2f-0000-3512-2118-0009af100700',cust:'00001530-0000-3512-2118-0009af100700',cfg:'00001542-0000-3512-2118-0009af100700',time:0x2a2b,bcm:0x2a9c,bcFull:'0000181b-0000-1000-8000-00805f9b34fb'};
+const hex=dv=>Array.from(new Uint8Array(dv.buffer,dv.byteOffset,dv.byteLength)).map(b=>b.toString(16).padStart(2,'0')).join(' ');
+function slog(m){const t=new Date();SC.log.push(`${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())} ${m}`);if(SC.log.length>400)SC.log.shift();const el=$('#scaleLog');if(el)el.textContent=SC.log.join('\n')}
+function sstat(m){SC.status=m;const el=$('#scaleSt');if(el)el.textContent=m;slog('» '+m)}
+function parseMi(dv,o=0){
+  const c0=dv.getUint8(o),c1=dv.getUint8(o+1);const lbs=!!(c0&1),catty=!!(c1&0x40),hasImp=!!(c1&0x02),stable=!!(c1&0x20),removed=!!(c1&0x80);
+  const y=dv.getUint16(o+2,true),mo=dv.getUint8(o+4),da=dv.getUint8(o+5),hh=dv.getUint8(o+6),mi=dv.getUint8(o+7),ss=dv.getUint8(o+8);
+  const imp=dv.getUint16(o+9,true),raw=dv.getUint16(o+11,true);
+  const w=lbs?raw/100*0.45359237:catty?raw/100*0.5:raw/200;let t=new Date(y,mo-1,da,hh,mi,ss).getTime();if(y<2015||y>2100||isNaN(t))t=Date.now();
+  return {w:Math.round(w*100)/100,imp:hasImp&&imp>0&&imp<3000?imp:null,stable,removed,t};
+}
+async function wv(ch,arr){const b=new Uint8Array(arr);slog('→ '+Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join(' '));return ch.writeValueWithResponse?ch.writeValueWithResponse(b):ch.writeValue(b)}
+function scaleId(){let id=S.profile.settings.scaleId;if(!id){id=1+Math.floor(Math.random()*65534);S.profile.settings.scaleId=id;queueSave('profile')}return id}
+function showLive(w){SC.live=w;const el=$('#scaleLive');if(el){el.hidden=false;el.innerHTML=`${fmt(w,2)}<small> kg</small>`}}
+let scaleRenderT;const scaleRender=()=>{clearTimeout(scaleRenderT);scaleRenderT=setTimeout(()=>{if(ui.tab==='prog'&&ui.progMode==='body'&&!ui.sheet)render()},300)};
+function saveScale(m){
+  S.profile.body=S.profile.body.filter(x=>!(x.d===iso(new Date(m.t))&&!x.t));
+  S.profile.body.push({id:nid(),d:iso(new Date(m.t)),t:m.t,w:m.w,...(m.imp?{imp:m.imp}:{}),src:'scale'});SC.got++;queueSave('profile');scaleRender();
+}
+function addScaleMeasurement(m){
+  if(S.profile.body.some(x=>x.t&&Math.abs(x.t-m.t)<90000&&Math.abs(x.w-m.w)<0.3)){slog(`pomiar ${m.w} kg już zapisany`);return}
+  if(SC.pending.some(x=>Math.abs(x.t-m.t)<90000))return;
+  if((S.profile.settings.scaleSkip||[]).some(t=>Math.abs(t-m.t)<90000)){slog(`pomiar ${m.w} kg wcześniej pominięty`);return}
+  const prev=bodySorted().filter(x=>x.t!==m.t).pop();
+  if(prev&&Math.abs(m.w-prev.w)>Math.max(6,prev.w*0.08)){SC.pending.push(m);slog(`pomiar ${m.w} kg do potwierdzenia`);scaleRender();return}
+  saveScale(m);slog(`zapisano ${m.w} kg${m.imp?', impedancja '+m.imp:''}`);
+}
+function onScaleData(ev){
+  const dv=ev.target.value;slog('← '+hex(dv));
+  if(dv.byteLength===1&&dv.getUint8(0)===0x03){finishScale('end');return}
+  for(let o=0;o+13<=dv.byteLength;o+=13){const m=parseMi(dv,o);if(m.w>5&&m.w<300){if(SC.done||Date.now()-m.t<120000)showLive(m.w);if(m.stable&&!m.removed)addScaleMeasurement(m)}}
+}
+async function watchLive(dev){
+  if(!dev.watchAdvertisements)return;
+  try{dev.addEventListener('advertisementreceived',ev=>{const sd=ev.serviceData?.get(MI.bcFull);if(!sd||sd.byteLength<13)return;const m=parseMi(sd,0);if(m.w>5&&m.w<300){showLive(m.w);if(m.stable&&!m.removed)addScaleMeasurement(m)}});await dev.watchAdvertisements();slog('odczyt na żywo z reklam BLE włączony')}
+  catch(e){slog('odczyt na żywo niedostępny: '+e.message)}
+}
+async function scaleConnect(all){
+  if(!navigator.bluetooth){toast('Ta przeglądarka nie obsługuje Bluetooth');return}
+  if(SC.busy)return;Object.assign(SC,{busy:true,got:0,done:false,live:0});render();
+  try{
+    sstat('Wybierz z listy wagę „MIBFS”…');
+    const opt={optionalServices:[MI.bc,MI.cust,0x180a,0x1805]};
+    const dev=await navigator.bluetooth.requestDevice(all?{acceptAllDevices:true,...opt}:{filters:[{name:'MIBFS'},{namePrefix:'MIBFS'},{namePrefix:'MI SCALE'},{services:[MI.bc]}],...opt});
+    SC.dev=dev;slog('urządzenie: '+(dev.name||'(bez nazwy)'));
+    dev.addEventListener('gattserverdisconnected',()=>{slog('rozłączono');if(!SC.done){SC.done=true;sstat(SC.got?`Zapisano ${SC.got} ${plural(SC.got,'pomiar','pomiary','pomiarów')}. Waga się rozłączyła.`:'Waga się rozłączyła, zanim przesłała pomiary. Stań na niej ponownie i od razu połącz.')}SC.busy=false;scaleRender();render()});
+    watchLive(dev);
+    sstat('Łączę z wagą…');const gatt=await dev.gatt.connect();
+    const bc=await gatt.getPrimaryService(MI.bc);slog('usługa składu ciała (181b) dostępna');
+    try{const cs=await gatt.getPrimaryService(MI.cust);await wv(await cs.getCharacteristic(MI.cfg),[0x06,0x04,0x00,0x00]);slog('jednostka ustawiona na kg')}catch(e){slog('pominięto ustawienie jednostki: '+e.message)}
+    try{const n=new Date(),y=n.getFullYear();await wv(await bc.getCharacteristic(MI.time),[y&0xff,y>>8,n.getMonth()+1,n.getDate(),n.getHours(),n.getMinutes(),n.getSeconds(),n.getDay()||7,0,0]);slog('ustawiono zegar wagi')}catch(e){slog('pominięto ustawienie zegara: '+e.message)}
+    try{const lc=await bc.getCharacteristic(MI.bcm);lc.addEventListener('characteristicvaluechanged',onScaleData);await lc.startNotifications();slog('nasłuch pomiaru bieżącego (2a9c)')}catch(e){slog('brak 2a9c: '+e.message)}
+    const hc=await bc.getCharacteristic(MI.hist);SC.hc=hc;hc.addEventListener('characteristicvaluechanged',onScaleData);await hc.startNotifications();
+    const id=scaleId();await wv(hc,[0x01,0xff,0xff,id>>8,id&0xff]);
+    sstat('Pobieram pomiary zapisane w wadze…');await wv(hc,[0x02]);
+    SC.histT=setTimeout(()=>finishScale('timeout'),20000);
+  }catch(e){
+    SC.busy=false;
+    sstat(e.name==='NotFoundError'?'Nie wybrano wagi. Stań na wadze (wyświetlacz musi świecić) i spróbuj ponownie.':e.name==='NetworkError'?'Nie udało się połączyć — waga mogła zasnąć. Stań na niej i od razu kliknij „Połącz”. Zamknij też Zepp Life, jeśli jest otwarte.':e.name==='SecurityError'?'Przeglądarka zablokowała Bluetooth. Zezwól na „Urządzenia w pobliżu” dla Chrome.':'Błąd: '+e.message);
+    render();
+  }
+}
+async function finishScale(why){
+  clearTimeout(SC.histT);if(SC.done)return;SC.done=true;
+  try{if(why==='end'&&SC.hc){await wv(SC.hc,[0x03]);const id=scaleId();await wv(SC.hc,[0x04,0xff,0xff,id>>8,id&0xff])}}catch(e){slog('potwierdzenie: '+e.message)}
+  sstat(SC.got?`Gotowe — zapisano ${SC.got} ${plural(SC.got,'pomiar','pomiary','pomiarów')}${SC.pending.length?`, ${SC.pending.length} do potwierdzenia`:''}. Możesz zostać na wadze jeszcze 30 s, żeby dodać bieżący pomiar.`:why==='timeout'?'Waga nie przesłała pomiarów. Zejdź z wagi, wejdź jeszcze raz i poczekaj, aż wynik zamiga.':`Brak nowych pomiarów w wadze${SC.pending.length?` (${SC.pending.length} do potwierdzenia)`:''}. Stań na wadze — bieżący pomiar zapisze się w ciągu 30 s.`);
+  SC.busy=false;render();
+  setTimeout(()=>{try{SC.dev?.gatt?.connected&&SC.dev.gatt.disconnect()}catch(e){}},30000);
 }
 
 function vMore(){
@@ -1357,8 +1478,15 @@ function act(a,v,b){
   case 'routineLoad':{const r=S.profile.routines.find(x=>x.id===v);if(!r)break;if(b?.dataset.today)ui.date=today();const w=W(ui.date,true);if(!w.title)w.title=r.name;let n=0;for(const i of r.items)if(ex(i)&&!w.entries.find(x=>x.ex===i)){w.entries.push({ex:i,sets:[]});n++}
     queueSave('w_'+ui.date);ui.sheet=null;ui.tab='day';toast(`Dodano ${n} ${plural(n,'ćwiczenie','ćwiczenia','ćwiczeń')}`);break}
   case 'routineDel':{if(ui.armed!=='r'+v){ui.armed='r'+v;break}ui.armed=null;S.profile.routines=S.profile.routines.filter(r=>r.id!==v);queueSave('profile');break}
-  case 'bodyAdd':{const wv=num(ui.bodyW);if(wv<=20||wv>400){toast('Wpisz masę ciała w kg');return}const d=ui.bodyD||today();S.profile.body=S.profile.body.filter(x=>x.d!==d);S.profile.body.push({d,w:wv});ui.bodyW='';queueSave('profile');toast('Pomiar zapisany');break}
-  case 'bodyDel':{if(ui.armed!=='b'+v){ui.armed='b'+v;break}ui.armed=null;S.profile.body=S.profile.body.filter(x=>x.d!==v);queueSave('profile');break}
+  case 'bodyAdd':{const wv=num(ui.bodyW);if(wv<=20||wv>400){toast('Wpisz masę ciała w kg');return}const d=ui.bodyD||today();S.profile.body=S.profile.body.filter(x=>x.d!==d||x.t);S.profile.body.push({id:nid(),d,w:wv,src:'manual'});ui.bodyW='';queueSave('profile');toast('Pomiar zapisany');break}
+  case 'bodyDel':{if(ui.armed!=='b'+v){ui.armed='b'+v;break}ui.armed=null;S.profile.body=S.profile.body.filter(x=>(x.id||x.d)!==v);queueSave('profile');break}
+  case 'bodyMetric':ui.bodyMetric=v;break;
+  case 'meSave':{const sex=$('#meSex').value,height=Math.round(num($('#meH').value)),birth=$('#meB').value;if(!sex||height<100||height>230||!birth){toast('Uzupełnij płeć, wzrost (cm) i datę urodzenia');return}S.profile.me={sex,height,birth};queueSave('profile');toast('Zapisano — skład ciała liczy się z tych danych');break}
+  case 'scaleConnect':scaleConnect(false);return;
+  case 'scaleAll':scaleConnect(true);return;
+  case 'scaleYes':{const m=SC.pending.splice(+v,1)[0];if(m)saveScale(m);break}
+  case 'scaleNo':{const m=SC.pending.splice(+v,1)[0];if(m){const k=(S.profile.settings.scaleSkip||[]).concat(m.t).slice(-60);S.profile.settings.scaleSkip=k;queueSave('profile')}break}
+  case 'scaleLogCopy':{const t=SC.log.join('\n');if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast('Dziennik skopiowany — wklej go Claude')).catch(()=>toast('Zaznacz tekst dziennika i skopiuj ręcznie'));return}
   case 'tAdj':if(T){T.end+=(+v)*1000;T.total=Math.max(T.total+(+v),1)}tick();return;
   case 'tStop':T=null;tick();return;
   case 'export':doExport();return;

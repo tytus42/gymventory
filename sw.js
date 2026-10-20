@@ -2,7 +2,7 @@
 // The app page itself is fetched from the network first (so updates show up on the next open)
 // and falls back to the saved copy offline. Icons, fonts and the rest come from the cache.
 // Bump VERSION when you change files.
-const VERSION = 'gymventory-2.0.1';
+const VERSION = 'gymventory-2.1';
 const SHELL = ['./', './index.html', './config.js', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
 
