@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <script src="config.js"></script>
-<script>window.GV_VERSION='2.1'</script>
+<script>window.GV_VERSION='2.2'</script>
 <style>
 /* Layout: one-column gym log, steel-chalk ground, cobalt like a 20 kg plate; condensed numerals read like a gym scoreboard. Bottom tab bar, sheets slide over for logging. */
 :root{
@@ -304,16 +304,288 @@ const relDay=s=>{const t=today();if(s===t)return'Dziś';if(s===addDays(t,-1))ret
 const mmss=s=>{s=Math.max(0,Math.round(s));return `${Math.floor(s/60)}:${pad(s%60)}`};
 const plural=(n,a,b,c)=>n===1?a:(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?b:c);
 
-const CATS=['Klatka','Plecy','Nogi','Pośladki','Barki','Biceps','Triceps','Brzuch','Cardio'];
+const CATS=['Klatka','Plecy','Nogi','Pośladki','Barki','Biceps','Triceps','Łydki','Przedramiona','Brzuch','Całe ciało','Cardio'];
+/* ---------- exercise library: name | muscle group | movement pattern | equipment | type ---------- */
+const LIB_RAW=`Wyciskanie sztangi leżąc|Klatka|hpush|bb
+Wyciskanie hantli leżąc|Klatka|hpush|db
+Wyciskanie leżąc na suwnicy Smitha|Klatka|hpush|sm
+Wyciskanie na maszynie siedząc|Klatka|hpush|mc
+Wyciskanie na maszynie Hammer|Klatka|hpush|mc
+Wyciskanie na wyciągu stojąc|Klatka|hpush|cb
+Wyciskanie sztangi z podłogi|Klatka|hpush|bb
+Wyciskanie kettlebell leżąc|Klatka|hpush|kb
+Pompki|Klatka|hpush|bw
+Pompki z obciążeniem|Klatka|hpush|bw
+Pompki z nogami na podwyższeniu|Klatka|hpush|bw
+Pompki na kolanach|Klatka|hpush|bw
+Wyciskanie sztangi na skosie dodatnim|Klatka|ipush|bb
+Wyciskanie hantli na skosie|Klatka|ipush|db
+Wyciskanie na skosie na suwnicy Smitha|Klatka|ipush|sm
+Wyciskanie na maszynie skośnej|Klatka|ipush|mc
+Wyciskanie na wyciągu w górę (skos)|Klatka|ipush|cb
+Wyciskanie sztangi na skosie ujemnym|Klatka|dpush|bb
+Wyciskanie hantli na skosie ujemnym|Klatka|dpush|db
+Wyciskanie na maszynie w dół (decline)|Klatka|dpush|mc
+Pompki na poręczach|Triceps|dpush|bw
+Pompki na poręczach pochylone (klatka)|Klatka|dpush|bw
+Pompki na poręczach na maszynie|Triceps|dpush|mc
+Pompki na poręczach z asystą|Triceps|dpush|mc
+Pompki w podporze tyłem na ławce|Triceps|dpush|bw
+Rozpiętki z hantlami leżąc|Klatka|fly|db
+Rozpiętki z hantlami na skosie|Klatka|fly|db
+Rozpiętki na maszynie (butterfly)|Klatka|fly|mc
+Krzyżowanie linek wyciągu górnego|Klatka|fly|cb
+Krzyżowanie linek wyciągu dolnego|Klatka|fly|cb
+Rozpiętki na wyciągu leżąc|Klatka|fly|cb
+Rozpiętki z gumą|Klatka|fly|bd
+Przenoszenie hantla za głowę (pullover)|Klatka|pullover|db
+Przenoszenie na wyciągu prostymi rękami|Plecy|pullover|cb
+Pullover na maszynie|Plecy|pullover|mc
+Podciąganie nachwytem|Plecy|vpull|bw
+Podciąganie podchwytem|Plecy|vpull|bw
+Podciąganie chwytem neutralnym|Plecy|vpull|bw
+Podciąganie z obciążeniem|Plecy|vpull|bw
+Podciąganie z gumą|Plecy|vpull|bd|bw
+Podciąganie na maszynie z asystą|Plecy|vpull|mc
+Ściąganie drążka wyciągu|Plecy|vpull|cb
+Ściąganie drążka wąskim chwytem|Plecy|vpull|cb
+Ściąganie drążka podchwytem|Plecy|vpull|cb
+Ściąganie uchwytu V na wyciągu|Plecy|vpull|cb
+Ściąganie jednorącz na wyciągu|Plecy|vpull|cb
+Ściąganie na maszynie|Plecy|vpull|mc
+Ściąganie jednorącz na maszynie Hammer|Plecy|vpull|mc
+Wiosłowanie sztangą|Plecy|hpull|bb
+Wiosłowanie sztangą podchwytem|Plecy|hpull|bb
+Wiosłowanie sztangą z podłogi (Pendlay)|Plecy|hpull|bb
+Wiosłowanie końcem sztangi (T-bar)|Plecy|hpull|bb
+Wiosłowanie hantlem jednorącz|Plecy|hpull|db
+Wiosłowanie hantlami na ławce skośnej|Plecy|hpull|db
+Wiosłowanie hantlami w opadzie|Plecy|hpull|db
+Wiosłowanie kettlebell|Plecy|hpull|kb
+Wiosłowanie na suwnicy Smitha|Plecy|hpull|sm
+Wiosłowanie siedząc na wyciągu|Plecy|hpull|cb
+Wiosłowanie na wyciągu jednorącz|Plecy|hpull|cb
+Wiosłowanie na wyciągu szerokim chwytem|Plecy|hpull|cb
+Wiosłowanie na maszynie siedząc|Plecy|hpull|mc
+Wiosłowanie na maszynie T-bar|Plecy|hpull|mc
+Wiosłowanie na maszynie z podparciem klatki|Plecy|hpull|mc
+Wiosłowanie odwrotne (australijskie)|Plecy|hpull|bw
+Wiosłowanie z gumą|Plecy|hpull|bd
+Szrugsy ze sztangą|Plecy|shrug|bb
+Szrugsy z hantlami|Plecy|shrug|db
+Szrugsy z trap bar|Plecy|shrug|tb
+Szrugsy na suwnicy Smitha|Plecy|shrug|sm
+Szrugsy na maszynie|Plecy|shrug|mc
+Szrugsy na wyciągu|Plecy|shrug|cb
+Prostowanie tułowia na ławce rzymskiej|Plecy|backext|bw
+Prostowanie tułowia z obciążeniem|Plecy|backext|bw
+Prostowanie tułowia na maszynie|Plecy|backext|mc
+Superman|Plecy|backext|bw
+Martwy ciąg|Plecy|hinge|bb
+Martwy ciąg sumo|Plecy|hinge|bb
+Martwy ciąg z trap bar|Plecy|hinge|tb
+Martwy ciąg z podwyższenia (rack pull)|Plecy|hinge|bb
+Martwy ciąg na suwnicy Smitha|Plecy|hinge|sm
+Martwy ciąg z kettlebell|Pośladki|hinge|kb
+Martwy ciąg z hantlami|Plecy|hinge|db
+Rumuński martwy ciąg|Nogi|hinge|bb
+Rumuński martwy ciąg z hantlami|Nogi|hinge|db
+Rumuński martwy ciąg na suwnicy Smitha|Nogi|hinge|sm
+Martwy ciąg na prostych nogach|Nogi|hinge|bb
+Martwy ciąg jednonóż z hantlem|Nogi|hinge|db
+Skłony ze sztangą na karku (good morning)|Nogi|hinge|bb
+Przyciąganie liny między nogami (pull-through)|Pośladki|hinge|cb
+Swing kettlebell|Pośladki|hinge|kb
+Przysiad ze sztangą|Nogi|squat|bb
+Przysiad przedni|Nogi|squat|bb
+Przysiad z hantlem (goblet)|Nogi|squat|db
+Przysiad goblet z kettlebell|Nogi|squat|kb
+Przysiad na suwnicy Smitha|Nogi|squat|sm
+Przysiad hack na maszynie|Nogi|squat|mc
+Przysiad wahadłowy (pendulum)|Nogi|squat|mc
+Przysiad z pasem (belt squat)|Nogi|squat|mc
+Wypychanie nóg na suwnicy|Nogi|squat|mc
+Wypychanie nóg na maszynie siedząc|Nogi|squat|mc
+Wypychanie jednonóż na suwnicy|Nogi|squat|mc
+Przysiad bez obciążenia|Nogi|squat|bw
+Przysiad z gumą|Nogi|squat|bd
+Wykroki z hantlami|Nogi|lunge|db
+Wykroki ze sztangą|Nogi|lunge|bb
+Wykroki chodzone z hantlami|Nogi|lunge|db
+Wykroki w tył z hantlami|Nogi|lunge|db
+Wykroki na suwnicy Smitha|Nogi|lunge|sm
+Wykroki bez obciążenia|Nogi|lunge|bw
+Przysiad bułgarski z hantlami|Nogi|lunge|db
+Przysiad bułgarski ze sztangą|Nogi|lunge|bb
+Przysiad bułgarski na suwnicy Smitha|Nogi|lunge|sm
+Przysiad bułgarski bez obciążenia|Nogi|lunge|bw
+Wchodzenie na skrzynię z hantlami|Nogi|lunge|db
+Wchodzenie na skrzynię ze sztangą|Nogi|lunge|bb
+Prostowanie nóg na maszynie|Nogi|kext|mc
+Prostowanie nogi jednonóż na maszynie|Nogi|kext|mc
+Prostowanie nóg na wyciągu|Nogi|kext|cb
+Sissy squat|Nogi|kext|bw
+Uginanie nóg leżąc na maszynie|Nogi|kflex|mc
+Uginanie nóg siedząc na maszynie|Nogi|kflex|mc
+Uginanie nogi stojąc na maszynie|Nogi|kflex|mc
+Uginanie nogi na wyciągu|Nogi|kflex|cb
+Uginanie nóg z hantlem leżąc|Nogi|kflex|db
+Uginanie nordyckie|Nogi|kflex|bw
+Uginanie nóg na piłce|Nogi|kflex|bw
+Hip thrust|Pośladki|hipext|bb
+Hip thrust z hantlem|Pośladki|hipext|db
+Hip thrust na suwnicy Smitha|Pośladki|hipext|sm
+Hip thrust na maszynie|Pośladki|hipext|mc
+Mostek biodrowy ze sztangą|Pośladki|hipext|bb
+Mostek biodrowy|Pośladki|hipext|bw
+Mostek biodrowy jednonóż|Pośladki|hipext|bw
+Wykop nogi w tył na wyciągu|Pośladki|hipext|cb
+Wykop nogi w tył na maszynie|Pośladki|hipext|mc
+Wykop nogi w tył z gumą|Pośladki|hipext|bd
+Odwodzenie nóg na maszynie|Pośladki|abd|mc
+Odwodzenie nogi na wyciągu|Pośladki|abd|cb
+Odwodzenie nóg z gumą|Pośladki|abd|bd
+Odwodzenie nogi leżąc bokiem|Pośladki|abd|bw
+Przywodzenie nóg na maszynie|Nogi|add|mc
+Przywodzenie nogi na wyciągu|Nogi|add|cb
+Przywodzenie w podporze bokiem (Copenhagen)|Nogi|add|bw|time
+Wspięcia na palce stojąc na maszynie|Łydki|calf|mc
+Wspięcia na palce siedząc na maszynie|Łydki|calf|mc
+Wspięcia na palce na suwnicy|Łydki|calf|mc
+Wspięcia na palce na suwnicy Smitha|Łydki|calf|sm
+Wspięcia na palce z hantlami|Łydki|calf|db
+Wspięcia na palce ze sztangą|Łydki|calf|bb
+Wspięcia na palce bez obciążenia|Łydki|calf|bw
+Wyciskanie żołnierskie|Barki|vpush|bb
+Wyciskanie sztangi nad głowę siedząc|Barki|vpush|bb
+Wyciskanie hantli nad głowę siedząc|Barki|vpush|db
+Wyciskanie hantli nad głowę stojąc|Barki|vpush|db
+Wyciskanie Arnolda|Barki|vpush|db
+Wyciskanie nad głowę na suwnicy Smitha|Barki|vpush|sm
+Wyciskanie nad głowę na maszynie|Barki|vpush|mc
+Wyciskanie kettlebell nad głowę|Barki|vpush|kb
+Wyciskanie końca sztangi (landmine)|Barki|vpush|bb
+Wyciskanie nad głowę na wyciągu|Barki|vpush|cb
+Podrzut sztangi (push press)|Barki|vpush|bb
+Pompki w staniu na rękach przy ścianie|Barki|vpush|bw
+Pompki pike|Barki|vpush|bw
+Unoszenie hantli bokiem|Barki|latraise|db
+Unoszenie hantli bokiem siedząc|Barki|latraise|db
+Unoszenie ramienia bokiem na wyciągu|Barki|latraise|cb
+Unoszenie ramion bokiem na maszynie|Barki|latraise|mc
+Unoszenie ramion bokiem z gumą|Barki|latraise|bd
+Wiosłowanie sztangą wzdłuż tułowia|Barki|latraise|bb
+Wiosłowanie wzdłuż tułowia na wyciągu|Barki|latraise|cb
+Wiosłowanie hantlami wzdłuż tułowia|Barki|latraise|db
+Unoszenie hantli w przód|Barki|frontraise|db
+Unoszenie sztangi w przód|Barki|frontraise|bb
+Unoszenie talerza w przód|Barki|frontraise|pl
+Unoszenie ramion w przód na wyciągu|Barki|frontraise|cb
+Odwrotne rozpiętki z hantlami w opadzie|Barki|reardelt|db
+Odwrotne rozpiętki leżąc na ławce skośnej|Barki|reardelt|db
+Odwrotne rozpiętki na maszynie|Barki|reardelt|mc
+Odwrotne krzyżowanie linek wyciągu|Barki|reardelt|cb
+Przyciąganie liny do twarzy (face pull)|Barki|reardelt|cb
+Rozciąganie gumy przed sobą (pull-apart)|Barki|reardelt|bd
+Uginanie ramion ze sztangą|Biceps|curl|bb
+Uginanie ramion z gryfem łamanym|Biceps|curl|ez
+Uginanie ramion z hantlami|Biceps|curl|db
+Uginanie młotkowe z hantlami|Biceps|curl|db
+Uginanie ramion z hantlami na ławce skośnej|Biceps|curl|db
+Uginanie skoncentrowane z hantlem|Biceps|curl|db
+Uginanie ramion Zottmana|Biceps|curl|db
+Uginanie ramion na modlitewniku z gryfem łamanym|Biceps|curl|ez
+Uginanie ramienia na modlitewniku z hantlem|Biceps|curl|db
+Uginanie ramion na maszynie (modlitewnik)|Biceps|curl|mc
+Uginanie ramion na wyciągu dolnym|Biceps|curl|cb
+Uginanie młotkowe na wyciągu z liną|Biceps|curl|cb
+Uginanie ramion na wyciągu górnym|Biceps|curl|cb
+Uginanie ramion nachwytem z gryfem łamanym|Biceps|curl|ez
+Uginanie ramion z gumą|Biceps|curl|bd
+Prostowanie ramion na wyciągu|Triceps|ext|cb
+Prostowanie ramion na wyciągu z liną|Triceps|ext|cb
+Prostowanie ramion na wyciągu podchwytem|Triceps|ext|cb
+Prostowanie ramienia jednorącz na wyciągu|Triceps|ext|cb
+Prostowanie ramion nad głową na wyciągu|Triceps|ext|cb
+Wyciskanie francuskie z gryfem łamanym leżąc|Triceps|ext|ez
+Wyciskanie francuskie z hantlami leżąc|Triceps|ext|db
+Wyciskanie francuskie z hantlem siedząc|Triceps|ext|db
+Prostowanie ramienia z hantlem nad głową|Triceps|ext|db
+Prostowanie ramienia z hantlem w opadzie|Triceps|ext|db
+Prostowanie ramion na maszynie|Triceps|ext|mc
+Prostowanie ramion z gumą|Triceps|ext|bd
+Wyciskanie sztangi leżąc wąsko|Triceps|hpush|bb
+Wyciskanie wąsko na suwnicy Smitha|Triceps|hpush|sm
+Pompki diamentowe|Triceps|hpush|bw
+Uginanie nadgarstków ze sztangą|Przedramiona|wrist|bb
+Uginanie nadgarstków z hantlami|Przedramiona|wrist|db
+Prostowanie nadgarstków z hantlami|Przedramiona|wrist|db
+Uginanie nadgarstków na wyciągu|Przedramiona|wrist|cb
+Spacer farmera z hantlami|Przedramiona|carry|db
+Spacer farmera z trap bar|Przedramiona|carry|tb
+Spacer farmera z kettlebell|Przedramiona|carry|kb
+Zwis na drążku|Przedramiona|carry|bw|time
+Spięcia brzucha na wyciągu|Brzuch|coreflex|cb
+Spięcia brzucha na maszynie|Brzuch|coreflex|mc
+Brzuszki|Brzuch|coreflex|bw
+Brzuszki na ławce skośnej|Brzuch|coreflex|bw
+Spięcia brzucha z obciążeniem|Brzuch|coreflex|bw
+Unoszenie nóg w zwisie|Brzuch|legraise|bw
+Unoszenie kolan w zwisie|Brzuch|legraise|bw
+Unoszenie nóg na poręczach|Brzuch|legraise|mc|bw
+Unoszenie nóg leżąc|Brzuch|legraise|bw
+Nożyce|Brzuch|legraise|bw|time
+Plank|Brzuch|antiext|bw|time
+Plank bokiem|Brzuch|antiext|bw|time
+Plank z obciążeniem|Brzuch|antiext|bw|time
+Hollow hold|Brzuch|antiext|bw|time
+Dead bug|Brzuch|antiext|bw
+Rolowanie kółkiem|Brzuch|antiext|bw
+Rosyjskie skręty|Brzuch|rot|bw
+Skręty tułowia na wyciągu (drwal)|Brzuch|rot|cb
+Skręty tułowia na maszynie|Brzuch|rot|mc
+Wypychanie linki przed siebie (Pallof press)|Brzuch|rot|cb
+Skłony boczne z hantlem|Brzuch|rot|db
+Zarzut sztangi na klatkę (power clean)|Całe ciało|olympic|bb
+Rwanie sztangi|Całe ciało|olympic|bb
+Thruster ze sztangą|Całe ciało|olympic|bb
+Thruster z hantlami|Całe ciało|olympic|db
+Turecka pobudka (get-up)|Całe ciało|olympic|kb
+Burpees|Całe ciało|olympic|bw
+Bieżnia|Cardio|cardio|cm|cardio
+Rower stacjonarny|Cardio|cardio|cm|cardio
+Rower poziomy|Cardio|cardio|cm|cardio
+Rower powietrzny (air bike)|Cardio|cardio|cm|cardio
+Orbitrek|Cardio|cardio|cm|cardio
+Wioślarz (ergometr)|Cardio|cardio|cm|cardio
+Schody (stepper)|Cardio|cardio|cm|cardio
+Ergometr narciarski (SkiErg)|Cardio|cardio|cm|cardio
+Bieg na zewnątrz|Cardio|cardio|bw|cardio
+Marsz|Cardio|cardio|bw|cardio
+Jazda na rowerze|Cardio|cardio|bw|cardio
+Pływanie|Cardio|cardio|bw|cardio
+Skakanka|Cardio|cardio|bw|time`;
+const EQ={bb:['sztanga','free'],db:['hantle','free'],kb:['kettlebell','free'],ez:['gryf łamany','free'],tb:['trap bar','free'],pl:['talerz','free'],mc:['maszyna','mach'],sm:['suwnica Smitha','mach'],cb:['wyciąg','mach'],bw:['masa ciała','bw'],bd:['guma','bw'],cm:['urządzenie cardio','cardio']};
+const EQG=[['mach','Maszyny i wyciągi'],['free','Wolne ciężary'],['bw','Masa ciała i gumy'],['cardio','Cardio']];
+const PAT={hpush:'Wyciskanie poziome',ipush:'Wyciskanie skośne',dpush:'Wyciskanie w dół / dipy',fly:'Rozpiętki',pullover:'Przenoszenie (pullover)',vpull:'Przyciąganie pionowe',hpull:'Wiosłowanie',shrug:'Szrugsy',backext:'Prostowanie tułowia',hinge:'Zawias biodrowy (martwe ciągi)',squat:'Przysiad / wypychanie',lunge:'Wykroki / jednonóż',kext:'Prostowanie nóg',kflex:'Uginanie nóg',hipext:'Wyprost bioder',abd:'Odwodzenie nóg',add:'Przywodzenie nóg',calf:'Wspięcia na palce',vpush:'Wyciskanie nad głowę',latraise:'Unoszenie bokiem',frontraise:'Unoszenie w przód',reardelt:'Tył barków',curl:'Uginanie ramion',ext:'Prostowanie ramion',wrist:'Nadgarstki',carry:'Chwyt i noszenie',coreflex:'Spięcia brzucha',legraise:'Unoszenie nóg',antiext:'Stabilizacja (plank)',rot:'Rotacja i skosy',olympic:'Ruchy całego ciała',cardio:'Cardio'};
+const slug=n=>n.toLowerCase().replace(/ł/g,'l').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const LIB=LIB_RAW.split('\n').map(l=>{const[name,cat,pat,eq,t]=l.split('|');return{id:slug(name),name,cat,pat,eq,type:t||(eq==='cm'?'cardio':(eq==='bw'||eq==='bd')?'bw':'w')}});
+const LIBI=Object.fromEntries(LIB.map(x=>[x.id,x])),LIBN=Object.fromEntries(LIB.map(x=>[x.name.toLowerCase(),x]));
+const libOf=e=>LIBI[e?.lib]||LIBN[(e?.name||'').toLowerCase()]||null;
+const meta=e=>{const l=libOf(e);return{pat:e?.pat||l?.pat||'',eq:e?.eq||l?.eq||''}};
+const eqLabel=k=>EQ[k]?.[0]||'';
+const patOpts=sel=>`<option value="">— nie wiem —</option>`+Object.entries(PAT).map(([k,l])=>`<option value="${k}" ${k===sel?'selected':''}>${l}</option>`).join('');
+const eqOpts=sel=>`<option value="">—</option>`+Object.entries(EQ).map(([k,[l]])=>`<option value="${k}" ${k===sel?'selected':''}>${l}</option>`).join('');
 const CAT_EN={chest:'Klatka',back:'Plecy',legs:'Nogi',shoulders:'Barki',biceps:'Biceps',triceps:'Triceps',abs:'Brzuch',core:'Brzuch',cardio:'Cardio',glutes:'Pośladki',arms:'Biceps'};
 const DEF_SETTINGS={inc:2.5,rest:120,restEx:180,bar:20,plates:[25,20,15,10,5,2.5,1.25],hint:true,share:true,ivl:{w:30,r:20,n:3}};
 function defaultProfile(){
   const ex=[['Przysiad ze sztangą','Nogi'],['Martwy ciąg','Plecy'],['Wyciskanie sztangi leżąc','Klatka'],['Wyciskanie żołnierskie','Barki'],['Wiosłowanie sztangą','Plecy'],['Podciąganie nachwytem','Plecy','bw'],['Pompki','Klatka','bw'],['Wyciskanie hantli na skosie','Klatka'],['Pompki na poręczach','Triceps','bw'],['Rumuński martwy ciąg','Nogi'],['Wypychanie nóg na suwnicy','Nogi'],['Hip thrust','Pośladki'],['Wykroki z hantlami','Nogi'],['Unoszenie hantli bokiem','Barki'],['Ściąganie drążka wyciągu','Plecy'],['Uginanie ramion ze sztangą','Biceps'],['Prostowanie ramion na wyciągu','Triceps'],['Plank','Brzuch','time'],['Spięcia brzucha na wyciągu','Brzuch'],['Bieżnia','Cardio','cardio'],['Rower stacjonarny','Cardio','cardio'],['Orbitrek','Cardio','cardio']]
-  .map(([name,cat,type='w'])=>({id:nid(),name,cat,type}));
+  .map(([name,cat,type='w'])=>({id:nid(),name,cat,type,...(LIBN[name.toLowerCase()]?{lib:LIBN[name.toLowerCase()].id}:{})}));
   return {v:2,exercises:ex,routines:[],settings:clone(DEF_SETTINGS),body:[]};
 }
 function migrate(p){p=clone(p);p.exercises??=[];p.routines??=[];p.body??=[];p.settings={...clone(DEF_SETTINGS),...(p.settings||{})};
   p.body.forEach(b=>{b.id??=b.d+(b.t?'-'+b.t:'')});p.me??={};
+  p.exercises.forEach(e=>{if(!e.lib){const l=LIBN[e.name.toLowerCase()];if(l)e.lib=l.id}});
   p.exercises.forEach(e=>{if(e.type==='time'&&/bieżni|biezni|bieg|rower|orbitrek|wioślarz|ergometr/i.test(e.name))e.type='cardio'});return p}
 const TYPES=[['w','Ciężar × powtórzenia'],['bw','Masa ciała (powtórzenia)'],['time','Czas (np. plank)'],['cardio','Cardio: czas, dystans, prędkość']];
 const typeOpts=sel=>TYPES.map(([k,l])=>`<option value="${k}" ${k===sel?'selected':''}>${l}</option>`).join('');
@@ -579,6 +851,20 @@ function weeklyVolume(endDate){
   for(const d in S.workouts){if(d<start||d>endDate)continue;for(const en of S.workouts[d].entries){const e=ex(en.ex);if(!e||e.cat==='Cardio')continue;const n=(en.sets||[]).filter(s=>!s.wu).length;res[e.cat]=(res[e.cat]||0)+n}}
   return res;
 }
+function ensureEx(key){
+  if(key.startsWith('E:'))return key.slice(2);
+  const l=LIBI[key.slice(2)];if(!l)return null;
+  const have=S.profile.exercises.find(e=>e.lib===l.id||e.name.toLowerCase()===l.name.toLowerCase());if(have){if(!have.lib)have.lib=l.id;return have.id}
+  const e={id:nid(),name:l.name,cat:l.cat,type:l.type,lib:l.id};S.profile.exercises.push(e);queueSave('profile');return e.id;
+}
+function candidates(e,samePat){
+  const m=meta(e);const out=[];const seen=new Set([e.id]);const seenLib=new Set(e.lib?[e.lib]:[]);
+  for(const u of S.profile.exercises){if(seen.has(u.id))continue;const um=meta(u);if(samePat?um.pat&&um.pat===m.pat:(u.cat===e.cat&&um.pat!==m.pat)){out.push({key:'E:'+u.id,name:u.name,eq:um.eq,pat:um.pat,ex:u});seen.add(u.id);if(u.lib)seenLib.add(u.lib)}}
+  const names=new Set(S.profile.exercises.map(u=>u.name.toLowerCase()));
+  for(const l of LIB){if(seenLib.has(l.id)||names.has(l.name.toLowerCase()))continue;if(samePat?l.pat===m.pat:(l.cat===e.cat&&l.pat!==m.pat))out.push({key:'L:'+l.id,name:l.name,eq:l.eq,pat:l.pat})}
+  return out;
+}
+const routine=id=>S.profile.routines.find(r=>r.id===id);
 const allCats=()=>{const s=new Set(CATS);S.profile.exercises.forEach(e=>s.add(e.cat));return [...s]};
 
 /* ---------- charts ---------- */
@@ -640,7 +926,7 @@ function vDay(){
       const ps=!en.sets?.length?prevSession(en.ex,d):null;
       h+=`<button class="entry" data-act="log" data-v="${en.ex}"><div class="h"><h3>${esc(e.name)}</h3><span class="cat">${esc(e.cat)}</span></div>
       ${rows?`<div class="sets">${rows}</div>`:`<div class="hint">Brak serii — dotknij, aby zacząć.</div>${ps?`<div class="sugg">Ostatnio: ${esc(ps.sets.filter(x=>!x.wu).map(x=>setShort(e,x)).join(', '))}</div>`:''}`}
-      ${en.note?`<div class="hint">„${esc(en.note)}”</div>`:''}</button>`});
+      ${en.from&&ex(en.from)?`<div class="hint">zamiast: ${esc(ex(en.from).name)}</div>`:''}${en.note?`<div class="hint">„${esc(en.note)}”</div>`:''}</button>`});
     h+=`</div>`;
   }else{
     h+=`<div class="empty" style="margin-top:14px"><h2>Pusty dzień</h2><p>Dodaj pierwsze ćwiczenie albo wczytaj szablon. Ciężary wpiszą się same na podstawie ostatniego treningu.</p></div>`;
@@ -678,8 +964,8 @@ function vHist(){
 }
 function vTemplates(){
   const R=S.profile.routines;
-  if(!R.length)return `<div class="empty">Szablon to zapisany zestaw ćwiczeń, który wczytujesz jednym dotknięciem. Otwórz dowolny trening i wybierz „Zapisz jako szablon”.</div>`;
-  return `<div class="list">${R.map(r=>`<div class="li"><div class="mid"><div>${esc(r.name)}</div><div class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.items.map(i=>ex(i)?.name).filter(Boolean).join(' · '))}</div></div><button class="btn" data-act="routineLoad" data-v="${r.id}" data-today="1">Na dziś</button><button class="btn ghost danger ${ui.armed==='r'+r.id?'armed':''}" data-act="routineDel" data-v="${r.id}">${ui.armed==='r'+r.id?'Usuń?':'×'}</button></div>`).join('')}</div>`;
+  return `<button class="btn block" data-act="tplNew" style="margin-bottom:10px">+ Nowy szablon</button>`+(!R.length?`<div class="empty">Szablon to zapisany zestaw ćwiczeń, który wczytujesz jednym dotknięciem. Utwórz go tutaj albo otwórz dowolny trening i wybierz „Zapisz jako szablon”.</div>`:
+  `<div class="list">${R.map(r=>`<div class="li"><button class="mid" data-act="tplOpen" data-v="${r.id}" style="background:none;border:0;text-align:left;padding:0;min-width:0"><div>${esc(r.name)}</div><div class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.items.map(i=>ex(i)?.name).filter(Boolean).join(' · ')||'pusty')}</div></button><button class="btn ghost" data-act="tplOpen" data-v="${r.id}">Edytuj</button><button class="btn" data-act="routineLoad" data-v="${r.id}" data-today="1">Na dziś</button></div>`).join('')}</div>`);
 }
 
 function vCal(){
@@ -728,7 +1014,9 @@ function vExDetail(id){
   const best=ws.reduce((a,b)=>metric(e,b)>metric(e,a||{w:0,r:0})?b:a,null);
   const maxW=ws.reduce((a,b)=>b.w>(a?.w||0)?b:a,null);
   const volS=H.map(s=>({d:s.date,v:s.sets.filter(x=>!x.wu).reduce((t,x)=>t+x.w*x.r,0)})).reduce((a,b)=>b.v>(a?.v||0)?b:a,null);
-  let h=`<div class="dayhead"><button class="iconbtn" data-act="exBack" aria-label="Wróć">‹</button><div class="mid"><div class="eyebrow">${esc(e.cat)}</div><h2>${esc(e.name)}</h2></div><button class="btn" data-act="logFromDetail" data-v="${id}">Trenuj dziś</button></div>`;
+  const em=meta(e);const alts=em.pat?candidates(e,true):[];
+  let h=`<div class="dayhead"><button class="iconbtn" data-act="exBack" aria-label="Wróć">‹</button><div class="mid"><div class="eyebrow">${esc(e.cat)}${em.pat?' · '+PAT[em.pat]:''}${em.eq?' · '+eqLabel(em.eq):''}</div><h2>${esc(e.name)}</h2></div><button class="btn" data-act="logFromDetail" data-v="${id}">Trenuj dziś</button></div>`;
+  if(alts.length)h+=`<div class="group-h">Zamienniki — ten sam ruch</div><div class="row" style="gap:6px">${alts.slice(0,14).map(c=>`<button class="chip" data-act="exAlt" data-v="${c.key}">${esc(c.name)} <span class="muted">· ${eqLabel(c.eq)}</span></button>`).join('')}</div>`;
   if(!H.length){h+=`<div class="empty" style="margin-top:12px">To ćwiczenie nie ma jeszcze żadnych serii.</div>`}
   else{
     h+=`<div class="stats" style="margin-top:10px">`;
@@ -757,6 +1045,7 @@ function vExDetail(id){
    <div class="grid3"><label class="f">Partia<select id="exCat">${allCats().map(c=>`<option ${c===e.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
    <label class="f">Rodzaj<select id="exType">${typeOpts(e.type)}</select></label>
    <label class="f">Skok ciężaru (kg)<input type="number" id="exInc" step="0.25" min="0" value="${e.inc??''}" placeholder="${fmt(S.profile.settings.inc)}"></label></div>
+   <div class="grid2"><label class="f">Ruch (do zamienników)<select id="exPat">${patOpts(em.pat)}</select></label><label class="f">Sprzęt<select id="exEq">${eqOpts(em.eq)}</select></label></div>
    <label class="f">Przerwa między seriami tego ćwiczenia (s)<input type="number" id="exRest" step="15" min="0" value="${e.rest??''}" placeholder="domyślnie ${S.profile.settings.rest}"></label>
    <div class="row"><button class="btn primary" data-act="exSave" data-v="${id}">Zapisz zmiany</button><span class="spacer"></span><button class="btn danger ${ui.armed==='exdel'+id?'armed':''}" data-act="exDel" data-v="${id}">${ui.armed==='exdel'+id?`Usuń wraz z ${H.length} ${plural(H.length,'sesją','sesjami','sesjami')}`:'Usuń ćwiczenie'}</button></div></div>`;
   return h;
@@ -962,22 +1251,59 @@ function renderSheet(){
   const el=$('#sheet');const s=ui.sheet;
   if(!s){if(el.innerHTML)el.innerHTML='';renderSheet.last=null;return}
   let h='';
-  h=({pick:sPick,log:sLog,routinePick:sRoutinePick,saveRoutine:sSaveRoutine,exInfo:sExInfo,friend:sFriend,challenge:sChallenge}[s.type]||(()=>''))();
+  h=({pick:sPick,swap:sSwap,tpl:sTpl,log:sLog,routinePick:sRoutinePick,saveRoutine:sSaveRoutine,exInfo:sExInfo,friend:sFriend,challenge:sChallenge}[s.type]||(()=>''))();
   const old=el.querySelector('.sheet');const same=old&&renderSheet.last===s;const top=same?old.scrollTop:0;
   el.innerHTML=`<div class="sheet-wrap" data-act="closeBg"><div class="sheet${same?'':' anim'}" role="dialog" aria-modal="true">${h}</div></div>`;
   if(same)el.querySelector('.sheet').scrollTop=top;renderSheet.last=s;
 }
 function sPick(){
-  const s=ui.sheet;const q=(s.q||'').toLowerCase();const I=index();
-  const items=S.profile.exercises.filter(e=>(!s.cat||e.cat===s.cat)&&(!q||e.name.toLowerCase().includes(q))).sort((a,b)=>((I.byEx[b.id]||[]).length-(I.byEx[a.id]||[]).length)||a.name.localeCompare(b.name,'pl'));
-  return `<div class="sheet-head"><div class="mid"><h2>Dodaj ćwiczenie</h2></div><button class="iconbtn" data-act="close" aria-label="Zamknij">×</button></div>
-  <input type="search" id="pickQ" data-in="sheet.q" placeholder="Szukaj albo wpisz nazwę nowego" value="${esc(s.q||'')}">
-  <div class="chips" style="margin:10px 0"><button class="chip ${!s.cat?'on':''}" data-act="pickCat" data-v="">Wszystkie</button>${allCats().map(c=>`<button class="chip ${s.cat===c?'on':''}" data-act="pickCat" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>
-  <div class="list">${items.map(e=>`<button class="li" data-act="pickEx" data-v="${e.id}"><div class="mid"><div>${esc(e.name)}</div><div class="muted small">${esc(e.cat)}${(I.byEx[e.id]||[]).length?' · '+(I.byEx[e.id]).length+' sesji':''}</div></div><span class="muted">›</span></button>`).join('')||`<div class="li muted">Brak takiego ćwiczenia.</div>`}</div>
-  <div class="group-h">Nowe ćwiczenie</div><div class="panel stack"><label class="f">Nazwa<input type="text" id="newName" data-in="sheet.q" value="${esc(s.q||'')}" placeholder="np. Face pull"></label>
+  const s=ui.sheet;const q=(s.q||'').trim().toLowerCase();const I=index();
+  const okCat=c=>!s.cat||c===s.cat,okEq=eq=>!s.eqg||EQ[eq]?.[1]===s.eqg;
+  const mine=S.profile.exercises.filter(e=>okCat(e.cat)&&(!s.eqg||okEq(meta(e).eq))&&(!q||e.name.toLowerCase().includes(q))).sort((a,b)=>((I.byEx[b.id]||[]).length-(I.byEx[a.id]||[]).length)||a.name.localeCompare(b.name,'pl'));
+  const haveL=new Set(S.profile.exercises.map(e=>e.lib).filter(Boolean)),haveN=new Set(S.profile.exercises.map(e=>e.name.toLowerCase()));
+  const lib=LIB.filter(l=>!haveL.has(l.id)&&!haveN.has(l.name.toLowerCase())&&okCat(l.cat)&&okEq(l.eq)&&(!q||l.name.toLowerCase().includes(q)||PAT[l.pat].toLowerCase().includes(q)||eqLabel(l.eq).includes(q)));
+  const n=s.libN||40;
+  const row=(act,v,name,sub)=>`<button class="li" data-act="${act}" data-v="${v}"><div class="mid"><div>${esc(name)}</div><div class="muted small">${sub}</div></div><span class="muted">›</span></button>`;
+  return `<div class="sheet-head">${s.back?'<button class="iconbtn" data-act="close" aria-label="Wróć">‹</button>':''}<div class="mid"><h2>${s.target?.tpl?'Dodaj do szablonu':'Dodaj ćwiczenie'}</h2><div class="muted small">${S.profile.exercises.length} Twoich · ${LIB.length} w bazie</div></div>${s.back?'':'<button class="iconbtn" data-act="close" aria-label="Zamknij">×</button>'}</div>
+  <input type="search" id="pickQ" data-in="sheet.q" placeholder="Szukaj: nazwa, ruch albo sprzęt" value="${esc(s.q||'')}">
+  <div class="chips" style="margin:10px 0 6px"><button class="chip ${!s.cat?'on':''}" data-act="pickCat" data-v="">Wszystkie partie</button>${allCats().map(c=>`<button class="chip ${s.cat===c?'on':''}" data-act="pickCat" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+  <div class="chips" style="margin-bottom:10px"><button class="chip ${!s.eqg?'on':''}" data-act="pickEq" data-v="">Każdy sprzęt</button>${EQG.map(([k,l])=>`<button class="chip ${s.eqg===k?'on':''}" data-act="pickEq" data-v="${k}">${l}</button>`).join('')}</div>
+  ${mine.length?`<div class="group-h">Twoje ćwiczenia</div><div class="list">${mine.map(e=>{const m=meta(e);const k=(I.byEx[e.id]||[]).length;return row('pickEx',e.id,e.name,`${esc(e.cat)}${m.eq?' · '+eqLabel(m.eq):''}${k?' · '+k+' '+plural(k,'sesja','sesje','sesji'):''}`)}).join('')}</div>`:''}
+  ${lib.length?`<div class="group-h">Baza ćwiczeń</div><div class="list">${lib.slice(0,n).map(l=>row('pickLib',l.id,l.name,`${esc(l.cat)} · ${eqLabel(l.eq)} · ${PAT[l.pat]}`)).join('')}</div>${lib.length>n?`<button class="btn block" data-act="pickMore" style="margin-top:8px">Pokaż więcej (${lib.length-n})</button>`:''}`:''}
+  ${!mine.length&&!lib.length?'<div class="empty" style="margin-top:8px">Nic nie pasuje. Zmień filtry albo utwórz własne ćwiczenie poniżej.</div>':''}
+  <div class="group-h">Własne ćwiczenie</div><div class="panel stack"><label class="f">Nazwa<input type="text" id="newName" data-in="sheet.q" value="${esc(s.q||'')}" placeholder="np. Wyciskanie na maszynie Technogym"></label>
   <div class="grid2"><label class="f">Partia<select id="newCat">${allCats().map(c=>`<option ${c===(s.cat||'Klatka')?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
-  <label class="f">Rodzaj<select id="newType">${typeOpts(s.cat==='Cardio'?'cardio':'w')}</select></label></div>
+  <label class="f">Rodzaj<select id="newType">${typeOpts(s.cat==='Cardio'?'cardio':'w')}</select></label>
+  <label class="f">Ruch (do zamienników)<select id="newPat">${patOpts('')}</select></label><label class="f">Sprzęt<select id="newEq">${eqOpts(s.eqg==='mach'?'mc':s.eqg==='free'?'db':'')}</select></label></div>
   <button class="btn" data-act="newEx">Utwórz i dodaj</button></div>`;
+}
+function sSwap(){
+  const s=ui.sheet;const e=ex(s.ex);const I=index();
+  const head=`<div class="sheet-head"><button class="iconbtn" data-act="close" aria-label="Wróć">‹</button><div class="mid"><div class="eyebrow">Zamień ćwiczenie</div><h2>${esc(e?.name||'Ćwiczenie')}</h2></div></div>`;
+  if(!e)return head+'<p class="muted">To ćwiczenie zostało usunięte.</p>';
+  const m=meta(e);const same=m.pat?candidates(e,true):[];const other=candidates(e,false).slice(0,16);
+  const last=id=>{const h=I.byEx[id];if(!h?.length)return'';const ss=h[h.length-1].sets.filter(x=>!x.wu);return ss.length?' · ostatnio '+setShort(ex(id),ss[0]):''};
+  const row=c=>`<button class="li" data-act="swapTo" data-v="${c.key}"><div class="mid"><div>${esc(c.name)}</div><div class="muted small">${eqLabel(c.eq)}${c.ex?' · Twoje'+last(c.ex.id):''}</div></div><span class="muted">›</span></button>`;
+  const w=W(ui.date);const r=s.ctx==='day'&&w?.rid?routine(w.rid):null;
+  let h=head+`<p class="small" style="margin:0 0 10px">${s.ctx==='tpl'?'Zamiana zmieni ten szablon.':`Zamiana dotyczy <b>tylko dzisiejszego treningu</b>${r?' — chyba że zaznaczysz niżej':''}. Jeśli masz już zrobione serie, zostaną, a nowe ćwiczenie pojawi się pod nimi.`}</p>`;
+  if(r)h+=`<label class="tog"><input type="checkbox" id="swapPerm" ${s.perm?'checked':''} data-act="swapPerm"> Zamień też na stałe w szablonie „${esc(r.name)}”</label>`;
+  if(!m.pat)h+=`<div class="prev">Dla tego ćwiczenia nie ustawiono rodzaju ruchu, więc pokazuję tylko ćwiczenia na tę samą partię. Ruch ustawisz w szczegółach ćwiczenia.</div>`;
+  else{h+=`<div class="small muted">Ten sam ruch: <b>${PAT[m.pat]}</b></div>`;
+    for(const[g,l]of EQG){const xs=same.filter(c=>EQ[c.eq]?.[1]===g).sort((a,b)=>(b.ex?1:0)-(a.ex?1:0));if(xs.length)h+=`<div class="group-h">${l}</div><div class="list">${xs.map(row).join('')}</div>`}
+    const nx=same.filter(c=>!EQ[c.eq]);if(nx.length)h+=`<div class="group-h">Inne</div><div class="list">${nx.map(row).join('')}</div>`;}
+  if(other.length)h+=`<div class="group-h">Inne ćwiczenia na: ${esc(e.cat)}</div><div class="list">${other.map(row).join('')}</div>`;
+  return h;
+}
+function sTpl(){
+  const r=routine(ui.sheet.rid);if(!r)return '<p class="muted">Szablon nie istnieje.</p>';
+  const ib='style="width:36px;height:36px"';
+  return `<div class="sheet-head"><div class="mid"><div class="eyebrow">Szablon</div><h2>${esc(r.name)}</h2></div><button class="iconbtn" data-act="close" aria-label="Zamknij">×</button></div>
+  <label class="f">Nazwa<input type="text" id="tplName" data-in="tplname" value="${esc(r.name)}" maxlength="60"></label>
+  <div class="group-h">Ćwiczenia (${r.items.length})</div>
+  ${r.items.length?`<div class="list">${r.items.map((id,i)=>{const e=ex(id);const m=meta(e);return `<div class="li" style="gap:6px"><span class="muted num" style="width:16px">${i+1}</span><div class="mid"><div>${esc(e?.name||'(usunięte ćwiczenie)')}</div><div class="muted small">${e?esc(e.cat)+(m.eq?' · '+eqLabel(m.eq):''):''}</div></div>
+    <button class="iconbtn" data-act="tplUp" data-v="${i}" aria-label="Przesuń w górę" ${i?'':'disabled'} ${ib}>↑</button><button class="iconbtn" data-act="tplDown" data-v="${i}" aria-label="Przesuń w dół" ${i<r.items.length-1?'':'disabled'} ${ib}>↓</button><button class="iconbtn" data-act="tplSwap" data-v="${i}" aria-label="Zamień" ${ib}>⇄</button><button class="iconbtn" data-act="tplRm" data-v="${i}" aria-label="Usuń z szablonu" style="width:36px;height:36px;color:var(--warn)">×</button></div>`}).join('')}</div>`:'<div class="empty">Szablon jest pusty. Dodaj ćwiczenia.</div>'}
+  <button class="btn block" data-act="tplAdd" style="margin-top:10px">+ Dodaj ćwiczenie</button>
+  <div class="grid2" style="margin-top:14px"><button class="btn primary" data-act="routineLoad" data-v="${r.id}" data-today="1" ${r.items.length?'':'disabled'}>Rozpocznij dziś</button><button class="btn ghost danger ${ui.armed==='r'+r.id?'armed':''}" data-act="tplDel" data-v="${r.id}">${ui.armed==='r'+r.id?'Na pewno usunąć?':'Usuń szablon'}</button></div>`;
 }
 function stepper(s,label,unit,k,id,mode='decimal'){return `<div><div class="steplabel"><span>${label}</span><span>${unit}</span></div><div class="stepper"><button data-act="step" data-k="${k}" data-v="-1" aria-label="${label}: mniej">−</button><input type="text" inputmode="${mode}" id="${id}" data-in="sheet.${k}" value="${esc(s[k]??'')}" aria-label="${label}"><button data-act="step" data-k="${k}" data-v="1" aria-label="${label}: więcej">+</button></div></div>`}
 function cardioCalc(){
@@ -996,7 +1322,7 @@ function sLog(){
   let wi=0;
   const rows=sets.map((x,i)=>{const lab=x.wu?'R':++wi;const pr=I.pr[`${d}|${s.ex}|${i}`];return `<button class="setrow ${s.edit===i?'sel':''}" data-act="editSet" data-v="${i}"><span class="muted num">${lab}</span><span class="v">${setTxt(e,x)}</span><span class="row" style="gap:4px">${x.rpe?`<span class="small muted">RPE ${fmt(x.rpe)}</span>`:''}${x.wu?'<span class="tag wu">rozgrzewka</span>':''}${pr?'<span class="tag pr">rekord</span>':''}</span></button>`}).join('');
   const P=e.photos||[];
-  let h=`<div class="sheet-head"><div class="mid"><div class="eyebrow">${esc(e.cat)} · ${relDay(d)}</div><h2>${esc(e.name)}</h2></div><button class="iconbtn" data-act="close" aria-label="Zamknij">×</button></div>
+  let h=`<div class="sheet-head"><div class="mid"><div class="eyebrow">${esc(e.cat)} · ${relDay(d)}${meta(e).eq?' · '+eqLabel(meta(e).eq):''}</div><h2>${esc(e.name)}</h2></div><button class="btn" data-act="swap" title="Np. gdy ławka jest zajęta">Zamień</button><button class="iconbtn" data-act="close" aria-label="Zamknij">×</button></div>
   <div class="prev">${ps?`<div><b>Ostatnio (${dShort(ps.date)}):</b> ${esc(ps.sets.map(x=>setShort(e,x)).join(', '))}</div>`:`<div class="muted">Pierwszy raz? ${isC?'Wpisz czas, prędkość i nachylenie.':'Zacznij od lekkiej serii rozgrzewkowej.'}</div>`}
   ${sg&&sgDiff&&s.edit==null?`<div class="row" style="margin-top:6px;gap:8px;flex-wrap:nowrap"><button class="chip" data-act="applySug">Spróbuj: ${isT?mmss(sg.r):(sg.w?fmt(sg.w)+' kg × '+sg.r:sg.r+' powt.')}</button><span class="small muted" style="min-width:0">${esc(sg.why)}</span></div>`:''}</div>
   <button class="equip" data-act="exInfo">${P[0]?`<span class="ph"><img data-photo="${esc(P[0].path)}" alt=""></span>`:''}<span class="tx"><span class="small muted">Sprzęt i notatki${P.length?` · ${P.length} ${plural(P.length,'zdjęcie','zdjęcia','zdjęć')}`:''}</span><span>${e.note?esc(e.note):'<span class="muted">Dodaj ustawienia maszyny albo zdjęcie</span>'}</span></span><span class="muted">›</span></button>`;
@@ -1357,6 +1683,7 @@ document.addEventListener('input',ev=>{
   if(k){
     if(k==='note'){const en=W(ui.date)?.entries.find(x=>x.ex===ui.sheet?.ex);if(en){en.note=t.value;queueSave('w_'+ui.date)}return}
     if(k==='wtitle'){const w=W(ui.date);if(w){w.title=t.value.slice(0,60);queueSave('w_'+ui.date)}return}
+    if(k==='tplname'){const r=routine(ui.sheet?.rid);if(r){r.name=t.value.slice(0,60);queueSave('profile')}return}
     if(k==='exnote'){const e=ex(t.dataset.ex);if(e){e.note=t.value;queueSave('profile')}return}
     setPath(k,t.value);
     if(k==='q'||k==='sheet.q'){if(t.id==='newName'){const p=$('#pickQ');if(p)p.value=t.value}else render()}
@@ -1397,7 +1724,7 @@ document.addEventListener('click',ev=>{
 function disarm(k){if(ui.armed&&ui.armed!==k)ui.armed=null}
 function act(a,v,b){
   const st=S.profile.settings;
-  if(!['exDel','bodyDel','routineDel','rmEntry','photoDel','frRemove','chDel','chLeave'].includes(a))ui.armed=null;
+  if(!['exDel','bodyDel','routineDel','rmEntry','photoDel','frRemove','chDel','chLeave','tplDel'].includes(a))ui.armed=null;
   switch(a){
   case 'tab':ui.tab=v;ui.exDetail=null;ui.sheet=null;window.scrollTo(0,0);break;
   case 'day':ui.date=addDays(ui.date,+v);break;
@@ -1405,13 +1732,34 @@ function act(a,v,b){
   case 'mon':{const[y,m]=ui.calMonth.split('-').map(Number);const d=new Date(y,m-1+(+v),1);ui.calMonth=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;break}
   case 'openDay':ui.date=v;ui.tab='day';ui.exDetail=null;window.scrollTo(0,0);break;
   case 'pick':ui.sheet={type:'pick',q:'',cat:''};break;
-  case 'pickCat':ui.sheet.cat=v;break;
-  case 'pickEx':{const w=W(ui.date,true);if(!w.entries.find(x=>x.ex===v)){w.entries.push({ex:v,sets:[]});queueSave('w_'+ui.date)}openLogger(v);return}
+  case 'pickCat':ui.sheet.cat=v;ui.sheet.libN=40;break;
+  case 'pickEq':ui.sheet.eqg=v;ui.sheet.libN=40;break;
+  case 'pickMore':ui.sheet.libN=(ui.sheet.libN||40)+60;break;
+  case 'pickLib':{const id=ensureEx('L:'+v);if(id)return act('pickEx',id);break}
+  case 'swap':ui.sheet={type:'swap',ex:ui.sheet.ex,ctx:'day',perm:false,back:ui.sheet};break;
+  case 'swapPerm':ui.sheet.perm=!ui.sheet.perm;break;
+  case 'swapTo':{const s=ui.sheet;const nx=ensureEx(v);if(!nx)break;
+    if(s.ctx==='tpl'){const r=routine(s.rid);if(r){r.items[s.idx]=nx;queueSave('profile')}ui.sheet=s.back;toast('Zamieniono w szablonie');break}
+    const w=W(ui.date,true);const i=w.entries.findIndex(x=>x.ex===s.ex);
+    if(!w.entries.some(x=>x.ex===nx)){if(i>=0&&!w.entries[i].sets.length)w.entries[i]={...w.entries[i],ex:nx,from:s.ex};else w.entries.splice(i>=0?i+1:w.entries.length,0,{ex:nx,sets:[],from:s.ex})}
+    let msg='Zamieniono — tylko w dzisiejszym treningu';
+    if(s.perm&&w.rid){const r=routine(w.rid);if(r){r.items=r.items.map(x=>x===s.ex?nx:x);queueSave('profile');msg='Zamieniono dziś i w szablonie'}}
+    queueSave('w_'+ui.date);openLogger(nx);toast(msg);return}
+  case 'exAlt':{const id=ensureEx(v);if(id){ui.exDetail=id;window.scrollTo(0,0)}break}
+  case 'tplNew':{const r={id:nid(),name:'Nowy szablon',items:[]};S.profile.routines.push(r);queueSave('profile');ui.sheet={type:'tpl',rid:r.id};break}
+  case 'tplOpen':ui.sheet={type:'tpl',rid:v};break;
+  case 'tplUp':case 'tplDown':{const r=routine(ui.sheet.rid);const i=+v,j=a==='tplUp'?i-1:i+1;if(r&&j>=0&&j<r.items.length){[r.items[i],r.items[j]]=[r.items[j],r.items[i]];queueSave('profile')}break}
+  case 'tplRm':{const r=routine(ui.sheet.rid);if(r){r.items.splice(+v,1);queueSave('profile')}break}
+  case 'tplSwap':{const r=routine(ui.sheet.rid);if(r)ui.sheet={type:'swap',ex:r.items[+v],ctx:'tpl',rid:r.id,idx:+v,back:ui.sheet};break}
+  case 'tplAdd':ui.sheet={type:'pick',q:'',cat:'',target:{tpl:ui.sheet.rid},back:ui.sheet};break;
+  case 'tplDel':{if(ui.armed!=='r'+v){ui.armed='r'+v;break}ui.armed=null;S.profile.routines=S.profile.routines.filter(r=>r.id!==v);queueSave('profile');ui.sheet=null;toast('Szablon usunięty');break}
+  case 'pickEx':{const s=ui.sheet;if(s?.target?.tpl){const r=routine(s.target.tpl);if(r&&!r.items.includes(v)){r.items.push(v);queueSave('profile')}ui.sheet=s.back;toast('Dodano do szablonu');break}
+    const w=W(ui.date,true);if(!w.entries.find(x=>x.ex===v)){w.entries.push({ex:v,sets:[]});queueSave('w_'+ui.date)}openLogger(v);return}
   case 'newEx':{const name=($('#newName').value||'').trim();if(!name){toast('Wpisz nazwę ćwiczenia');return}
     if(S.profile.exercises.some(e=>e.name.toLowerCase()===name.toLowerCase())){toast('Takie ćwiczenie już istnieje');return}
-    const e={id:nid(),name,cat:$('#newCat').value,type:$('#newType').value};S.profile.exercises.push(e);queueSave('profile');return act('pickEx',e.id)}
+    const e={id:nid(),name,cat:$('#newCat').value,type:$('#newType').value};const np=$('#newPat')?.value,ne=$('#newEq')?.value;if(np)e.pat=np;if(ne)e.eq=ne;S.profile.exercises.push(e);queueSave('profile');return act('pickEx',e.id)}
   case 'log':openLogger(v);return;
-  case 'close':case 'closeBg':{const s=ui.sheet;if(s?.type==='exInfo'&&s.back){ui.sheet=s.back;break}if(s?.type==='log'&&s.logged>0&&st.restEx>0)startTimer(st.restEx,'ex');ui.sheet=null;break}
+  case 'close':case 'closeBg':{const s=ui.sheet;if(s?.back&&['exInfo','swap','pick'].includes(s.type)){ui.sheet=s.back;break}if(s?.type==='log'&&s.logged>0&&st.restEx>0)startTimer(st.restEx,'ex');ui.sheet=null;break}
   case 'step':{const s=ui.sheet,k=b.dataset.k;const e=ex(s.ex);const dv=+v;
     if(k==='w'){const inc=e.inc||st.inc;s.w=fmt(Math.max(0,Math.round((num(s.w)+dv*inc)*100)/100))}
     else if(k==='r'){if(e.type==='cardio')s.r=mmss(Math.max(0,toSecs(s.r)+dv*60));else{const stp=e.type==='time'?5:1;s.r=String(Math.max(0,Math.round(num(s.r))+dv*stp))}}
@@ -1467,7 +1815,7 @@ function act(a,v,b){
   case 'exDetailFromLog':ui.sheet=null;ui.exDetail=v;ui.tab='prog';window.scrollTo(0,0);break;
   case 'exBack':ui.exDetail=null;break;
   case 'logFromDetail':ui.date=today();ui.tab='day';ui.exDetail=null;return act('pickEx',v);
-  case 'exSave':{const e=ex(v);const n=$('#exName').value.trim();if(n)e.name=n;e.cat=$('#exCat').value;e.type=$('#exType').value;const inc=$('#exInc').value;if(inc==='')delete e.inc;else e.inc=num(inc);const rs=$('#exRest').value;if(rs==='')delete e.rest;else e.rest=Math.max(0,Math.round(num(rs)));queueSave('profile');toast('Zapisano');break}
+  case 'exSave':{const e=ex(v);const n=$('#exName').value.trim();if(n)e.name=n;e.cat=$('#exCat').value;e.type=$('#exType').value;const inc=$('#exInc').value;if(inc==='')delete e.inc;else e.inc=num(inc);const rs=$('#exRest').value;if(rs==='')delete e.rest;else e.rest=Math.max(0,Math.round(num(rs)));const lb=libOf(e);const pv=$('#exPat').value,qv=$('#exEq').value;if(pv&&pv!==lb?.pat)e.pat=pv;else delete e.pat;if(qv&&qv!==lb?.eq)e.eq=qv;else delete e.eq;queueSave('profile');toast('Zapisano');break}
   case 'exDel':{if(ui.armed!=='exdel'+v){ui.armed='exdel'+v;break}ui.armed=null;(ex(v)?.photos||[]).slice().forEach(p=>delPhoto(v,p.id));
     for(const d in S.workouts){const w=S.workouts[d];const n=w.entries.length;w.entries=w.entries.filter(x=>x.ex!==v);if(w.entries.length!==n){queueSave('w_'+d);if(!w.entries.length)delete S.workouts[d]}}
     S.profile.exercises=S.profile.exercises.filter(e=>e.id!==v);S.profile.routines.forEach(r=>r.items=r.items.filter(i=>i!==v));queueSave('profile');ui.exDetail=null;toast('Ćwiczenie usunięte');break}
@@ -1475,7 +1823,7 @@ function act(a,v,b){
   case 'saveRoutine':{const d=v||ui.date;ui.sheet={type:'saveRoutine',name:W(d)?.title||'',from:d};break}
   case 'routineSave':{const name=(ui.sheet.name||'').trim();if(!name){toast('Nadaj szablonowi nazwę');return}
     S.profile.routines.push({id:nid(),name,items:W(ui.sheet.from||ui.date).entries.map(x=>x.ex)});queueSave('profile');ui.sheet=null;toast('Szablon zapisany');break}
-  case 'routineLoad':{const r=S.profile.routines.find(x=>x.id===v);if(!r)break;if(b?.dataset.today)ui.date=today();const w=W(ui.date,true);if(!w.title)w.title=r.name;let n=0;for(const i of r.items)if(ex(i)&&!w.entries.find(x=>x.ex===i)){w.entries.push({ex:i,sets:[]});n++}
+  case 'routineLoad':{const r=S.profile.routines.find(x=>x.id===v);if(!r)break;if(b?.dataset.today)ui.date=today();const w=W(ui.date,true);if(!w.title)w.title=r.name;w.rid=r.id;let n=0;for(const i of r.items)if(ex(i)&&!w.entries.find(x=>x.ex===i)){w.entries.push({ex:i,sets:[]});n++}
     queueSave('w_'+ui.date);ui.sheet=null;ui.tab='day';toast(`Dodano ${n} ${plural(n,'ćwiczenie','ćwiczenia','ćwiczeń')}`);break}
   case 'routineDel':{if(ui.armed!=='r'+v){ui.armed='r'+v;break}ui.armed=null;S.profile.routines=S.profile.routines.filter(r=>r.id!==v);queueSave('profile');break}
   case 'bodyAdd':{const wv=num(ui.bodyW);if(wv<=20||wv>400){toast('Wpisz masę ciała w kg');return}const d=ui.bodyD||today();S.profile.body=S.profile.body.filter(x=>x.d!==d||x.t);S.profile.body.push({id:nid(),d,w:wv,src:'manual'});ui.bodyW='';queueSave('profile');toast('Pomiar zapisany');break}
