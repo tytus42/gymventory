@@ -1,0 +1,17 @@
+# Codzienne lekkie zapytanie do bazy, żeby darmowy projekt Supabase nie był usypiany po 7 dniach bez ruchu.
+name: Supabase keep-alive
+on:
+  schedule:
+    - cron: '17 6 * * *'   # codziennie ok. 7:17 / 8:17 czasu polskiego
+  workflow_dispatch: {}
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Zapytanie do bazy
+        run: |
+          URL="https://igzgoougjppwkvcvybqv.supabase.co"
+          KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlnemdvb3VnanBwd2t2Y3Z5YnF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNDg2MTMsImV4cCI6MjEwNzcyNDYxM30.Y6b7pcsPbtHOZ7KEewSuWVgMqMa8Ts4VpDYOjnJEaxg"
+          code=$(curl -s -o out.txt -w "%{http_code}" -X POST "$URL/rest/v1/rpc/gv_ping" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}')
+          echo "HTTP $code: $(cat out.txt)"
+          test "$code" = "200"

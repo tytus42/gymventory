@@ -148,3 +148,7 @@ create policy gv_photos_update on storage.objects for update to authenticated
   using (bucket_id = 'gv-photos' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy gv_photos_delete on storage.objects for delete to authenticated
   using (bucket_id = 'gv-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- 7. Codzienny „ping” (GitHub Actions), żeby darmowy projekt nie był usypiany -----------------
+create or replace function public.gv_ping() returns integer language sql stable as $$ select 1 $$;
+grant execute on function public.gv_ping() to anon, authenticated;
